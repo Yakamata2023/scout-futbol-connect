@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -10,9 +11,12 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { MediaUpload } from '@/components/MediaUpload';
+import { BounceCards } from '@/components/BounceCards';
+import { MediaViewer } from '@/components/MediaViewer';
+import { BallpitBackground } from '@/components/BallpitBackground';
 import { 
   User, 
   Upload, 
@@ -70,6 +74,8 @@ const Dashboard = () => {
   
   const [playerData, setPlayerData] = useState<PlayerData | null>(null);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setSaving] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
@@ -242,25 +248,13 @@ const Dashboard = () => {
     }
   };
 
-  const deleteMediaItem = async (mediaId: string) => {
-    const { error } = await supabase
-      .from('player_media')
-      .delete()
-      .eq('id', mediaId);
+  const handleMediaClick = (media: MediaItem) => {
+    setSelectedMedia(media);
+    setViewerOpen(true);
+  };
 
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete media item",
-      });
-    } else {
-      await fetchMediaItems();
-      toast({
-        title: "Success",
-        description: "Media item deleted successfully",
-      });
-    }
+  const handleUploadComplete = () => {
+    fetchMediaItems();
   };
 
   const getProfileCompleteness = () => {
@@ -284,10 +278,12 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <>
+      <BallpitBackground />
+      <div className="min-h-screen bg-background relative z-10">
+        <Navigation />
+        
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
           <div>
@@ -558,115 +554,38 @@ const Dashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Video className="h-5 w-5" />
+                  <Upload className="h-5 w-5" />
+                  <span>Upload Media</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Upload videos and images to showcase your skills
+                </p>
+              </CardHeader>
+              <CardContent>
+                {playerData && (
+                  <MediaUpload 
+                    playerId={playerData.id} 
+                    onUploadComplete={handleUploadComplete}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Image className="h-5 w-5" />
                   <span>Media Gallery</span>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Upload videos and images to showcase your skills. Maximum 10 items allowed.
+                  Your uploaded videos and images ({mediaItems.length}/10)
                 </p>
               </CardHeader>
-              
-              <CardContent className="space-y-6">
-                {/* Upload Section */}
-                {mediaItems.length < 10 && playerData && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Video className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground mb-3">Upload Video</p>
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => handleFileUpload(e.target.files, 'video')}
-                        className="hidden"
-                        id="video-upload"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => document.getElementById('video-upload')?.click()}
-                        disabled={uploadingFiles.size > 0}
-                      >
-                        <Upload className="h-4 w-4 mr-1" />
-                        Choose Video
-                      </Button>
-                    </div>
-                    
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Image className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground mb-3">Upload Image</p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e.target.files, 'image')}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => document.getElementById('image-upload')?.click()}
-                        disabled={uploadingFiles.size > 0}
-                      >
-                        <Upload className="h-4 w-4 mr-1" />
-                        Choose Image
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Media Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mediaItems.map((item) => (
-                    <Card key={item.id} className="relative group">
-                      <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                        {item.media_type === 'video' ? (
-                          <video
-                            src={item.media_url}
-                            className="w-full h-full object-cover"
-                            controls
-                          />
-                        ) : (
-                          <img
-                            src={item.media_url}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => deleteMediaItem(item.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <CardContent className="p-3">
-                        <h4 className="font-medium text-sm truncate">{item.title}</h4>
-                        <div className="flex items-center justify-between mt-1">
-                          <Badge variant="outline">
-                            {item.media_type}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            #{item.display_order}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                
-                {mediaItems.length === 0 && (
-                  <div className="text-center py-12">
-                    <Video className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="font-medium mb-2">No media uploaded yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Upload videos and images to showcase your football skills to scouts
-                    </p>
-                  </div>
-                )}
+              <CardContent>
+                <BounceCards 
+                  media={mediaItems} 
+                  onMediaClick={handleMediaClick}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -706,8 +625,18 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <MediaViewer
+          media={selectedMedia}
+          open={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedMedia(null);
+          }}
+        />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
