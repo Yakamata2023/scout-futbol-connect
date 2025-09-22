@@ -249,9 +249,9 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
   return (
     <motion.canvas
       ref={canvasRef}
-      className="fixed inset-0 -z-10 opacity-10"
+      className="fixed inset-0 -z-10 opacity-30"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 0.1 }}
+      animate={{ opacity: 0.3 }}
       transition={{ duration: 2 }}
     />
   );
