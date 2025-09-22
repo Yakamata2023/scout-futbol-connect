@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Navigation } from '@/components/Navigation';
+import { PlayerShowcase } from '@/components/PlayerShowcase';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, Users, Video, Target, Star, Shield, Globe, Award } from 'lucide-react';
@@ -151,6 +152,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Player Showcase */}
+      <PlayerShowcase />
 
       {/* Stats Section */}
       <section className="py-20 px-4">
