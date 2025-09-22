@@ -24,6 +24,7 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
   const ballsRef = useRef<Ball[]>([]);
   const animationRef = useRef<number>();
   const mouseRef = useRef({ x: 0, y: 0 });
+  const clickEffectRef = useRef<Array<{ x: number; y: number; strength: number; decay: number }>>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,16 +63,40 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
         ball.vx *= friction;
         ball.vy *= friction;
 
-        // Mouse interaction
+        // Enhanced mouse interaction - flowing effect
         const dx = mouseRef.current.x - ball.x;
         const dy = mouseRef.current.y - ball.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance < 100) {
-          const force = (100 - distance) / 100;
-          ball.vx -= (dx / distance) * force * 0.5;
-          ball.vy -= (dy / distance) * force * 0.5;
+        if (distance < 150) {
+          const force = (150 - distance) / 150;
+          // Create flowing effect - attract when far, repel when close
+          if (distance > 50) {
+            ball.vx += (dx / distance) * force * 0.3;
+            ball.vy += (dy / distance) * force * 0.3;
+          } else {
+            ball.vx -= (dx / distance) * force * 0.8;
+            ball.vy -= (dy / distance) * force * 0.8;
+          }
         }
+
+        // Process click effects
+        clickEffectRef.current.forEach((effect, index) => {
+          const clickDx = effect.x - ball.x;
+          const clickDy = effect.y - ball.y;
+          const clickDistance = Math.sqrt(clickDx * clickDx + clickDy * clickDy);
+          
+          if (clickDistance < 200) {
+            const clickForce = (200 - clickDistance) / 200 * effect.strength;
+            ball.vx -= (clickDx / clickDistance) * clickForce * 2;
+            ball.vy -= (clickDy / clickDistance) * clickForce * 2;
+          }
+          
+          effect.strength *= effect.decay;
+          if (effect.strength < 0.1) {
+            clickEffectRef.current.splice(index, 1);
+          }
+        });
 
         // Update position
         ball.x += ball.vx;
@@ -182,6 +207,22 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
       mouseRef.current.y = e.clientY - rect.top;
     };
 
+    const handleClick = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      // Add multiple click effects for more bouncing
+      for (let i = 0; i < 3; i++) {
+        clickEffectRef.current.push({
+          x: clickX + (Math.random() - 0.5) * 50,
+          y: clickY + (Math.random() - 0.5) * 50,
+          strength: 15 + Math.random() * 10,
+          decay: 0.95
+        });
+      }
+    };
+
     const handleResize = () => {
       resizeCanvas();
       initBalls();
@@ -193,6 +234,7 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
 
     window.addEventListener('resize', handleResize);
     canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('click', handleClick);
 
     return () => {
       if (animationRef.current) {
@@ -200,6 +242,7 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
       }
       window.removeEventListener('resize', handleResize);
       canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('click', handleClick);
     };
   }, [count, colors]);
 
