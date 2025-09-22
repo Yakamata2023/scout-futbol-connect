@@ -18,7 +18,7 @@ interface BallpitBackgroundProps {
 
 export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({ 
   count = 50, 
-  colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316'] 
+  colors = ['#000000', '#ffffff', '#333333', '#cccccc', '#666666', '#999999'] 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ballsRef = useRef<Ball[]>([]);
