@@ -18,7 +18,7 @@ interface BallpitBackgroundProps {
 
 export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({ 
   count = 50, 
-  colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'] 
+  colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316'] 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ballsRef = useRef<Ball[]>([]);
@@ -249,9 +249,9 @@ export const BallpitBackground: React.FC<BallpitBackgroundProps> = ({
   return (
     <motion.canvas
       ref={canvasRef}
-      className="fixed inset-0 -z-10 opacity-30"
+      className="fixed inset-0 -z-10 opacity-60"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 0.3 }}
+      animate={{ opacity: 0.6 }}
       transition={{ duration: 2 }}
     />
   );
